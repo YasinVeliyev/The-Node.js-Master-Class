@@ -1,0 +1,8 @@
+POST http://127.0.0.1:3000/user/sigin
+Content-Type: "application/json"
+foo:"bar"
+
+{
+    "red":"blue",
+    "apple":"green",
+}
