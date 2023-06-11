@@ -1,6 +1,8 @@
 const http = require("node:http");
 let { StringDecoder } = require("node:string_decoder");
 const url = require("node:url");
+const handlers = require("./handlers");
+const config = require("./config");
 
 const server = http.createServer((req, res) => {
     // Get the url and parse it
@@ -28,17 +30,35 @@ const server = http.createServer((req, res) => {
 
     req.on("end", () => {
         buffer += decoder.end();
-        //Send the response
-        res.end("Hello World\n");
-        console.log(`Request received with this payload: ${buffer}`);
+
+        choosenHandler = handlers[trimmedPath] ? handlers[trimmedPath] : handlers.notFound;
+
+        let data = {
+            trimmedPath,
+            query,
+            method,
+            headers,
+            buffer,
+        };
+
+        choosenHandler(data, (statusCode, payload) => {
+            statusCode = typeof statusCode == "number" ? statusCode : 200;
+            payload = typeof payload == "object" ? payload : {};
+            //Send the response
+            res.setHeader("Content-Type", "application/json");
+            res.writeHead(statusCode);
+            //Send the response
+            res.end(JSON.stringify(payload));
+            console.log(`Returning this response: ${JSON.stringify(payload)} ${statusCode}`);
+        });
     });
 
     //Log the request
-    console.log(
-        `Method :${method}\nPath : ${trimmedPath}\nQuery:${JSON.stringify(query)}\nHeaders:${JSON.stringify(headers)}`
-    );
 });
 
-server.listen(3000, () => {
-    console.log("The server is listening on port 3000 now");
+const PORT = config.port;
+const mode = config.name;
+
+server.listen(PORT, () => {
+    console.log(`The server is listening on port ${PORT} ${mode} mode`);
 });
